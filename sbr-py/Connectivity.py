@@ -32,7 +32,7 @@ class Connectivity:
         elif self.connection == 'UART':
             # TODO manage SerialException and add auto port detection (eg. typical ttyUSB0, ttyUSB1, ttyACM0, etc...)
             self.serial = serial.Serial(
-                port=parameters['port'],
+                port='/dev/'+parameters['port'],
                 baudrate=parameters['speed'],
                 parity=serial.PARITY_NONE,
                 stopbits=serial.STOPBITS_ONE,
@@ -49,7 +49,7 @@ class Connectivity:
         :return: dictionary with type and payload: {'type': ..., 'payload': ...}
                  'type': 'MPU" - payload from MPU sensors
         """
-        if self.connection == 'WIFI':
+        if self.connection == 'UART':
             rx_data = self.serial.read(size=1)  # read byte by byte
             if rx_data:
                 print(len(rx_data))
