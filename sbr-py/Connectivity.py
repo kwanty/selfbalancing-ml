@@ -20,13 +20,26 @@ class Connectivity:
                             UART: {'port': ..., 'speed' ..., 'timeout' ...}
         TODO: WIFI/BT timeout ???
         """
-        if connection_type.upper() == 'WIFI':
+        self.serial = None
+        self.wifi = None
+        self.bt = None
+
+        self.connection = connection_type.upper()
+        if self.connection == 'WIFI':
             assert False, 'WIFI connectivity not yet supported'
-        elif connection_type.upper() == 'BT':
+        elif self.connection == 'BT':
             assert False, 'BT connectivity not yet supported'
-        elif connection_type.upper() == 'UART':
+        elif self.connection == 'UART':
+            # TODO manage SerialException and add auto port detection (eg. typical ttyUSB0, ttyUSB1, ttyACM0, etc...)
+            self.serial = serial.Serial(
+                port=parameters['port'],
+                baudrate=parameters['speed'],
+                parity=serial.PARITY_NONE,
+                stopbits=serial.STOPBITS_ONE,
+                bytesize=serial.EIGHTBITS,
+                timeout=parameters['timeout']
+            )
             # https://pyserial.readthedocs.io/en/latest/pyserial_api.html
-            pass
         else:
             assert False, 'connectivity method: {} not supported'.format(connection_type)
 
@@ -36,7 +49,14 @@ class Connectivity:
         :return: dictionary with type and payload: {'type': ..., 'payload': ...}
                  'type': 'MPU" - payload from MPU sensors
         """
-        pass
+        if self.connection == 'WIFI':
+            rx_data = self.serial.read(size=1)  # read byte by byte
+            if rx_data:
+                print(len(rx_data))
+                print(rx_data)
+                print(' ')
+
+        return {'type': None}   # not ready
 
     def write(self, payload):
         """

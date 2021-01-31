@@ -21,12 +21,12 @@ wifi_local_port = '1234'            # host (this) port
 wifi_robot_port = '1235'            # remote (robot) port
 
 
-def main_loop(con):
+def main_loop(connectivity):
     """
     Main loop sending/receiving data.
     When obtain correct frame, print acc/gyro parameters,
     When read keyboard <left, right, up, down arrow> send command to robot
-    :param con: Connectivity object
+    :param connectivity: Connectivity object
     """
 
     # TODO: primitive, inefficient pooling-type bidirectional communication
@@ -34,7 +34,7 @@ def main_loop(con):
     right_wheel_speed = 0
     while True:
         # print MPU readings
-        msg = con.read()
+        msg = connectivity.read()
         if msg['type'] == 'MPU':
             print('MPU readings')
         else:
@@ -55,11 +55,11 @@ def main_loop(con):
 
             payload = {'left': left_wheel_speed, 'right': right_wheel_speed}
             message = {'type': 'SetMotors', 'payload': payload}
-            con.write(message)
+            connectivity.write(message)
 
             if key == keys.ESC:
                 print('STOP and EXIT')
-                con.write({'type': 'SetMotors', 'payload': {'left': 0, 'right': 0}})
+                connectivity.write({'type': 'SetMotors', 'payload': {'left': 0, 'right': 0}})
                 break
 
 
