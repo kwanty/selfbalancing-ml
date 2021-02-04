@@ -144,7 +144,7 @@ int main(int argc, char *argv[])
     }
 #endif
     setMPUrate(50000); //example: set MPU rate to 1s
-    setMotors(30, 200); //example: stop motors
+    setMotors(-30, 30); //example: stop motors
 
     return a.exec();
 }

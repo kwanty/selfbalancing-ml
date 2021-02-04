@@ -6,8 +6,9 @@
 # License:      GPLv3
 # File:         Connectivity.py
 
-import serial
 import crc8
+import struct
+import serial
 
 class Connectivity:
     def __init__(self, connection_type, parameters):
@@ -62,6 +63,7 @@ class Connectivity:
             return byte_frame
 
         self.received_bytes.clear()     # broken frame, clear it
+        print('Broken frame!')
         return None
 
     def decode_frame(self, byte_frame):
@@ -70,16 +72,24 @@ class Connectivity:
         :param byte_frame: list of bytes with entire frame
         :return: json packed frame
         """
-
         empty_result = {'type': None}
         if byte_frame[0] == b'\x35':    # MPU package
             if len(byte_frame) != 28:
+                print('!=28')
                 return empty_result
-            # hash = crc8.crc8()
-            # hash.update(byte_frame[1:-3])
-            # if hash.digest() != byte_frame[-3]:
-            #     return empty_result
-
+            # print(byte_frame)
+            hash = crc8.crc8(initial_start=0xFF)        # non standard init value        
+            [hash.update(b) for b in byte_frame[0:-3]]  # CRC8 with beginning frame, without CRC and ending tags
+            if hash.digest() != byte_frame[-3]:
+                return empty_result
+            # print('CRC8 OK!')
+            acc_x = struct.unpack_from('<f', b''.join(byte_frame[1:5]))[0]
+            acc_y = struct.unpack('<f', b''.join(byte_frame[5:9]))[0]
+            acc_z = struct.unpack('<f', b''.join(byte_frame[9:13]))[0]
+            gyro_x = struct.unpack('<f', b''.join(byte_frame[13:17]))[0]
+            gyro_y = struct.unpack('<f', b''.join(byte_frame[17:21]))[0]
+            gyro_z = struct.unpack('<f', b''.join(byte_frame[21:25]))[0]
+            print('acc: {:.2f} {:.2f} {:.2f}, gyro: {:.2f} {:.2f} {:.2f}\n'.format(acc_x, acc_y, acc_z, gyro_x, gyro_y, gyro_z))
         return empty_result
 
     def read(self):
