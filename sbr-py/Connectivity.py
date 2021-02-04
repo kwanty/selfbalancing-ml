@@ -23,6 +23,7 @@ class Connectivity:
         self.serial = None
         self.wifi = None
         self.bt = None
+        self.received_bytes = []
 
         self.connection = connection_type.upper()
         if self.connection == 'WIFI':
@@ -43,20 +44,39 @@ class Connectivity:
         else:
             assert False, 'connectivity method: {} not supported'.format(connection_type)
 
+
+    def extract_frame(self):
+        """
+        todo:
+        """
+        if len(self.received_bytes) < 2:
+            return None
+        if self.received_bytes[-1] != b'\r' or self.received_bytes[-2] != b'\n':
+            return None
+        if self.received_bytes[0] == b'5':      # begining of the frame: 0x35 == b'5'
+            print('package!')
+
+    def decode_frame(self, byte_frame):
+        return {'type': None}
+
     def read(self):
         """
         Read and decode message, could be 'timeout' message if not received
         :return: dictionary with type and payload: {'type': ..., 'payload': ...}
                  'type': 'MPU" - payload from MPU sensors
         """
+        message = {'type': None}   # not ready
+
         if self.connection == 'UART':
             rx_data = self.serial.read(size=1)  # read byte by byte
             if rx_data:
-                print(len(rx_data))
-                print(rx_data)
-                print(' ')
+                self.received_bytes.append(rx_data)
+                frame = self.extract_frame()
+                if frame:
+                    message = self.decode_frame(frame)
+                    return message
 
-        return {'type': None}   # not ready
+        return message
 
     def write(self, payload):
         """
