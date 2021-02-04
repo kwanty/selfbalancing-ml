@@ -8,3 +8,4 @@ Assume using Linux and Conda. You can use pyenv instead of conda or Windows as w
 - `conda activate selfbalancing`
 - `conda install pyserial`  
 - `pip install getkey`
+- 'pip install crc8'

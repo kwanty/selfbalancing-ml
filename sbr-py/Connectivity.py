@@ -7,7 +7,7 @@
 # File:         Connectivity.py
 
 import serial
-
+import crc8
 
 class Connectivity:
     def __init__(self, connection_type, parameters):
@@ -44,20 +44,43 @@ class Connectivity:
         else:
             assert False, 'connectivity method: {} not supported'.format(connection_type)
 
-
     def extract_frame(self):
         """
-        todo:
+        Extract frame from the stream. Search for beginning tag and end tags. Do not interpret
+        :return: None if incomplete/broken frame, byte frame if complete.
         """
         if len(self.received_bytes) < 2:
-            return None
+            return None     # frame to short
         if self.received_bytes[-1] != b'\r' or self.received_bytes[-2] != b'\n':
-            return None
-        if self.received_bytes[0] == b'5':      # begining of the frame: 0x35 == b'5'
+            return None     # there no end of the frame
+
+        # beginning of the frame: 0x35 (MPU frame), 0xEE (correct frame with error code)
+        if self.received_bytes[0] in [b'\x35', b'\xEE']:
             print('package!')
+            byte_frame = self.received_bytes.copy()
+            self.received_bytes.clear()
+            return byte_frame
+
+        self.received_bytes.clear()     # broken frame, clear it
+        return None
 
     def decode_frame(self, byte_frame):
-        return {'type': None}
+        """
+        Decode frame from list of bytes to json
+        :param byte_frame: list of bytes with entire frame
+        :return: json packed frame
+        """
+
+        empty_result = {'type': None}
+        if byte_frame[0] == b'\x35':    # MPU package
+            if len(byte_frame) != 28:
+                return empty_result
+            # hash = crc8.crc8()
+            # hash.update(byte_frame[1:-3])
+            # if hash.digest() != byte_frame[-3]:
+            #     return empty_result
+
+        return empty_result
 
     def read(self):
         """
