@@ -5,6 +5,7 @@
 # Created:      30.01.2021
 # License:      GPLv3
 # File:         Connectivity.py
+# TODO: WIFI/BT connectivity
 
 import crc8
 import struct
