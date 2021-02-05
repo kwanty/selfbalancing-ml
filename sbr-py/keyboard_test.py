@@ -38,7 +38,7 @@ def main_loop(connectivity):
         msg = connectivity.read()
         if msg['type'] is None:     # ignore None msg
             pass
-        elif msg['type'] == 'MPU':
+        elif msg['type'] == 'MPUrate':
             print('acc: {:.2f} {:.2f} {:.2f}, gyro:  {:.2f} {:.2f} {:.2f}\n'
             .format(msg['acc_x'], msg['acc_y'], msg['acc_z'], msg['gyro_x'], msg['gyro_y'], msg['gyro_z']))
         else:
@@ -57,13 +57,12 @@ def main_loop(connectivity):
                 right_wheel_speed = max(-255, right_wheel_speed-5)
             print('Wheel speed: Left {}, Right {}'.format(left_wheel_speed, right_wheel_speed))
 
-            payload = {'left': left_wheel_speed, 'right': right_wheel_speed}
-            message = {'type': 'SetMotors', 'payload': payload}
+            message = {'type': 'SetMotors', 'left': left_wheel_speed, 'right': right_wheel_speed}
             connectivity.write(message)
 
             if key == keys.ESC:
                 print('STOP and EXIT')
-                connectivity.write({'type': 'SetMotors', 'payload': {'left': 0, 'right': 0}})
+                connectivity.write({'type': 'SetMotors', 'left': 0, 'right': 0})
                 break
 
 
@@ -84,4 +83,5 @@ if __name__ == "__main__":
         assert False, 'unsupported connectivity method: {}'.format(connectivity)
 
     con = Connectivity(connectivity, parameters)
+    con.write({'type': 'MPUrate', 'rate': 5000})
     main_loop(con)

@@ -89,7 +89,7 @@ class Connectivity:
             gyro_x = struct.unpack('<f', b''.join(byte_frame[13:17]))[0]
             gyro_y = struct.unpack('<f', b''.join(byte_frame[17:21]))[0]
             gyro_z = struct.unpack('<f', b''.join(byte_frame[21:25]))[0]
-            return {'type': 'MPU', 'acc_x': acc_x, 'acc_y': acc_y, 'acc_z': acc_z, 'gyro_x': gyro_x, 'gyro_y': gyro_y,'gyro_z': gyro_z}
+            return {'type': 'MPUdata', 'acc_x': acc_x, 'acc_y': acc_y, 'acc_z': acc_z, 'gyro_x': gyro_x, 'gyro_y': gyro_y,'gyro_z': gyro_z}
         return empty_result
 
     def read(self):
@@ -114,7 +114,24 @@ class Connectivity:
         """
         Write (send) data to robot
         :param payload: format: {'type', 'payload'}
-                        MPU reading rate: type == 'MPUrate', payload == number of ms between reading
-                        Motors speed: type =='SetMotors', payload == {'left': ..., 'right': ...} speed +-255
+                        MPU reading rate: 'type': 'MPUrate', 'rate': number of ms between reading
+                        Motors speed: type =='SetMotors', 'left': ..., 'right': ...: speed +-255
         """
-        pass
+        if payload['type'] == 'SetMotors':
+            byte_frame = b'\x2F'
+            byte_frame += struct.pack('>HH', payload['left'], payload['right'])
+            hash = crc8.crc8(initial_start=0xFF)
+            [hash.update(b) for b in byte_frame]
+            byte_frame += hash.digest()
+            byte_frame += b'\r\n'
+            print('byte frame: {}\n'.format(byte_frame))
+        elif payload['type'] == 'MPUrate':
+            byte_frame = b'\xA7'
+            byte_frame += struct.pack('>I', payload['rate'])
+            hash = crc8.crc8(initial_start=0xFF)
+            [hash.update(b) for b in byte_frame]
+            byte_frame += hash.digest()
+            byte_frame += b'\r\n'
+            print('MPUrate: {}\n'.format(byte_frame))
+        else:
+            assert False, 'Unsupported message PC->robot: {}'.format(payload['type'])
