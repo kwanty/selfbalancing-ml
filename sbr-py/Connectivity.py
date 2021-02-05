@@ -57,13 +57,13 @@ class Connectivity:
 
         # beginning of the frame: 0x35 (MPU frame), 0xEE (correct frame with error code)
         if self.received_bytes[0] in [b'\x35', b'\xEE']:
-            print('package!')
+            # print('package!')
             byte_frame = self.received_bytes.copy()
             self.received_bytes.clear()
             return byte_frame
 
         self.received_bytes.clear()     # broken frame, clear it
-        print('Broken frame!')
+        # print('Broken frame!')
         return None
 
     def decode_frame(self, byte_frame):
@@ -73,14 +73,14 @@ class Connectivity:
         :return: json packed frame
         """
         empty_result = {'type': None}
-        if byte_frame[0] == b'\x35':    # MPU package
-            if len(byte_frame) != 28:
-                print('!=28')
+        if byte_frame[0] == b'\x35':                    # MPU package
+            if len(byte_frame) != 28:                   # wrong message length
+                # print('!=28')
                 return empty_result
             # print(byte_frame)
             hash = crc8.crc8(initial_start=0xFF)        # non standard init value        
             [hash.update(b) for b in byte_frame[0:-3]]  # CRC8 with beginning frame, without CRC and ending tags
-            if hash.digest() != byte_frame[-3]:
+            if hash.digest() != byte_frame[-3]:         # corrupted frame
                 return empty_result
             # print('CRC8 OK!')
             acc_x = struct.unpack_from('<f', b''.join(byte_frame[1:5]))[0]
@@ -89,7 +89,7 @@ class Connectivity:
             gyro_x = struct.unpack('<f', b''.join(byte_frame[13:17]))[0]
             gyro_y = struct.unpack('<f', b''.join(byte_frame[17:21]))[0]
             gyro_z = struct.unpack('<f', b''.join(byte_frame[21:25]))[0]
-            print('acc: {:.2f} {:.2f} {:.2f}, gyro: {:.2f} {:.2f} {:.2f}\n'.format(acc_x, acc_y, acc_z, gyro_x, gyro_y, gyro_z))
+            return {'type': 'MPU', 'acc_x': acc_x, 'acc_y': acc_y, 'acc_z': acc_z, 'gyro_x': gyro_x, 'gyro_y': gyro_y,'gyro_z': gyro_z}
         return empty_result
 
     def read(self):
@@ -108,7 +108,6 @@ class Connectivity:
                 if frame:
                     message = self.decode_frame(frame)
                     return message
-
         return message
 
     def write(self, payload):

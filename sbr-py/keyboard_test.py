@@ -33,12 +33,16 @@ def main_loop(connectivity):
     left_wheel_speed = 0
     right_wheel_speed = 0
     while True:
+        # print('.')
         # print MPU readings
         msg = connectivity.read()
-        if msg['type'] == 'MPU':
-            print('MPU readings')
-        # else:
-            # print('Unsupported message from robot, type: {}'.format(msg['type']))
+        if msg['type'] is None:     # ignore None msg
+            pass
+        elif msg['type'] == 'MPU':
+            print('acc: {:.2f} {:.2f} {:.2f}, gyro:  {:.2f} {:.2f} {:.2f}\n'
+            .format(msg['acc_x'], msg['acc_y'], msg['acc_z'], msg['gyro_x'], msg['gyro_y'], msg['gyro_z']))
+        else:
+            print('Unsupported message from robot, type: {}'.format(msg['type']))
 
         # read keyboard and setup motors
         key = getkey(blocking=False)
@@ -75,7 +79,7 @@ if __name__ == "__main__":
     elif connectivity == 'BT':
         parameters = {'TBD'}
     elif connectivity == 'UART':
-        parameters = {'port': uart_port, 'speed': uart_speed, 'timeout': 1000}
+        parameters = {'port': uart_port, 'speed': uart_speed, 'timeout': 0.01}
     else:
         assert False, 'unsupported connectivity method: {}'.format(connectivity)
 
