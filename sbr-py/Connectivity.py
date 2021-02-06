@@ -69,17 +69,20 @@ class Connectivity:
         # print('Broken frame!')
         return None
 
-    def check_crc8(self, byte_frame):
+    def crc8(self, byte_frame):
         """
         Check CRC8 parity byte_frame[-3] is CRC
         :param byte_frame: list of bytes with entire frame
-        :return: True/False
+        :return: crc8
         """
         hash = crc8.crc8(initial_start=0xFF)            # non standard init value
-        [hash.update(b) for b in byte_frame[0:-3]]      # CRC8 with beginning frame, without CRC and ending tags
-        if hash.digest() == byte_frame[-3]:             # corrupted frame
-            return True
-        return False
+        [hash.update(b) for b in byte_frame]      # CRC8 with beginning frame, without CRC and ending tags
+        print(type(byte_frame))
+        print(type(byte_frame[0]))
+        # print(byte_frame[0])
+        # print(hash.digest())
+        # print(len(byte_frame))
+        return hash.digest()
 
     def decode_frame(self, byte_frame):
         """
@@ -88,12 +91,11 @@ class Connectivity:
         :return: json packed frame
         """
         empty_result = {'type': None}
-        if not self.decode_frame(byte_frame[-3]):       # corrupted frame
-            return empty_result
-
         if byte_frame[0] == b'\x35':                    # MPU package
             if len(byte_frame) != 28:                   # wrong message length
                 # print('!=28')
+                return empty_result
+            if self.crc8(byte_frame[:-3]) != byte_frame[-3]:       # corrupted frame
                 return empty_result
             # print('CRC8 OK!')
             acc_x = struct.unpack_from('<f', b''.join(byte_frame[1:5]))[0]
@@ -107,14 +109,17 @@ class Connectivity:
             if len(byte_frame) != 5:
                 # print('!=5')
                 return empty_result
+            if  self.crc8(byte_frame[:-3]) != byte_frame[-3]:       # corrupted frame
+                return empty_result
+            # print('CRC8 OK!')
             error_code = 'UNKNOWN_ERROR'
             if byte_frame[1] == b'\x00':
                 error_code = 'ERROR_OTHER'
-            elif error_code[1] == b'\01':
+            elif error_code[1] == b'\x01':
                 error_code = 'ERROR_MPU_READ'
-            elif error_code[1] == b'\02':
+            elif error_code[1] == b'\x02':
                 error_code = 'ERROR_MPU_INIT'
-            elif error_code[1] == b'\03':
+            elif error_code[1] == b'\x03':
                 error_code = 'ERROR_ILLEGAL_CM'
             return {'type': 'ERROR', 'code': error_code}
 
@@ -145,6 +150,11 @@ class Connectivity:
                         MPU reading rate: 'type': 'MPUrate', 'rate': number of ms between reading
                         Motors speed: type =='SetMotors', 'left': ..., 'right': ...: speed +-255
         """
+
+
+        return
+
+
         if payload['type'] == 'SetMotors':
             byte_frame = b'\x2F'
             byte_frame += struct.pack('>HH', payload['left'], payload['right'])
@@ -154,8 +164,15 @@ class Connectivity:
             byte_frame += b'\r\n'
             print('byte frame: {}\n'.format(byte_frame))
         elif payload['type'] == 'MPUrate':
+            print('payload:{}'.format(payload))
+            print(type(payload['rate']))
+            print(payload['rate'])
+            print('\n\n')
             byte_frame = b'\xA7'
             byte_frame += struct.pack('>I', payload['rate'])
+
+            print(byte_frame)
+            print('\n\n')
             hash = crc8.crc8(initial_start=0xFF)
             [hash.update(b) for b in byte_frame]
             byte_frame += hash.digest()

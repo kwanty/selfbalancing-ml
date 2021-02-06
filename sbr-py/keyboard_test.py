@@ -38,7 +38,7 @@ def main_loop(connectivity):
         msg = connectivity.read()
         if msg['type'] is None:     # ignore None msg
             pass
-        elif msg['type'] == 'MPUrate':
+        elif msg['type'] == 'MPUdata':
             print('acc: {:.2f} {:.2f} {:.2f}, gyro:  {:.2f} {:.2f} {:.2f}\n'
             .format(msg['acc_x'], msg['acc_y'], msg['acc_z'], msg['gyro_x'], msg['gyro_y'], msg['gyro_z']))
         else:
