@@ -6,10 +6,12 @@
 # License:      GPLv3
 # File:         Connectivity.py
 # TODO: WIFI/BT connectivity
+# TODO: test decode_frame() Error package
 
 import crc8
 import struct
 import serial
+
 
 class Connectivity:
     def __init__(self, connection_type, parameters):
@@ -67,6 +69,18 @@ class Connectivity:
         # print('Broken frame!')
         return None
 
+    def check_crc8(self, byte_frame):
+        """
+        Check CRC8 parity byte_frame[-3] is CRC
+        :param byte_frame: list of bytes with entire frame
+        :return: True/False
+        """
+        hash = crc8.crc8(initial_start=0xFF)            # non standard init value
+        [hash.update(b) for b in byte_frame[0:-3]]      # CRC8 with beginning frame, without CRC and ending tags
+        if hash.digest() == byte_frame[-3]:             # corrupted frame
+            return True
+        return False
+
     def decode_frame(self, byte_frame):
         """
         Decode frame from list of bytes to json
@@ -74,14 +88,12 @@ class Connectivity:
         :return: json packed frame
         """
         empty_result = {'type': None}
+        if not self.decode_frame(byte_frame[-3]):       # corrupted frame
+            return empty_result
+
         if byte_frame[0] == b'\x35':                    # MPU package
             if len(byte_frame) != 28:                   # wrong message length
                 # print('!=28')
-                return empty_result
-            # print(byte_frame)
-            hash = crc8.crc8(initial_start=0xFF)        # non standard init value        
-            [hash.update(b) for b in byte_frame[0:-3]]  # CRC8 with beginning frame, without CRC and ending tags
-            if hash.digest() != byte_frame[-3]:         # corrupted frame
                 return empty_result
             # print('CRC8 OK!')
             acc_x = struct.unpack_from('<f', b''.join(byte_frame[1:5]))[0]
@@ -91,6 +103,21 @@ class Connectivity:
             gyro_y = struct.unpack('<f', b''.join(byte_frame[17:21]))[0]
             gyro_z = struct.unpack('<f', b''.join(byte_frame[21:25]))[0]
             return {'type': 'MPUdata', 'acc_x': acc_x, 'acc_y': acc_y, 'acc_z': acc_z, 'gyro_x': gyro_x, 'gyro_y': gyro_y,'gyro_z': gyro_z}
+        elif byte_frame[0] == b'\xEE':                  # package with error code
+            if len(byte_frame) != 5:
+                # print('!=5')
+                return empty_result
+            error_code = 'UNKNOWN_ERROR'
+            if byte_frame[1] == b'\x00':
+                error_code = 'ERROR_OTHER'
+            elif error_code[1] == b'\01':
+                error_code = 'ERROR_MPU_READ'
+            elif error_code[1] == b'\02':
+                error_code = 'ERROR_MPU_INIT'
+            elif error_code[1] == b'\03':
+                error_code = 'ERROR_ILLEGAL_CM'
+            return {'type': 'ERROR', 'code': error_code}
+
         return empty_result
 
     def read(self):
