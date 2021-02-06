@@ -39,31 +39,31 @@ def main_loop(connectivity):
         if msg['type'] is None:     # ignore None msg
             pass
         elif msg['type'] == 'MPUdata':
-            print('acc: {:.2f} {:.2f} {:.2f}, gyro:  {:.2f} {:.2f} {:.2f}\n'
+            print('acc: {:.2f} {:.2f} {:.2f}, gyro:  {:.2f} {:.2f} {:.2f}'
             .format(msg['acc_x'], msg['acc_y'], msg['acc_z'], msg['gyro_x'], msg['gyro_y'], msg['gyro_z']))
         else:
             print('Unsupported message from robot, type: {}'.format(msg['type']))
 
         # read keyboard and setup motors
-        key = getkey(blocking=False)
-        if key != '':
-            if key == keys.LEFT:
-                left_wheel_speed = max(-255, left_wheel_speed-5)
-            if key == keys.RIGHT:
-                left_wheel_speed = min(255, left_wheel_speed+5)
-            if key == keys.UP:
-                right_wheel_speed = min(255, right_wheel_speed+5)
-            if key == keys.DOWN:
-                right_wheel_speed = max(-255, right_wheel_speed-5)
-            print('Wheel speed: Left {}, Right {}'.format(left_wheel_speed, right_wheel_speed))
+        # key = getkey(blocking=False)
+        # if key != '':
+        #     if key == keys.LEFT:
+        #         left_wheel_speed = max(-255, left_wheel_speed-5)
+        #     if key == keys.RIGHT:
+        #         left_wheel_speed = min(255, left_wheel_speed+5)
+        #     if key == keys.UP:
+        #         right_wheel_speed = min(255, right_wheel_speed+5)
+        #     if key == keys.DOWN:
+        #         right_wheel_speed = max(-255, right_wheel_speed-5)
+        #     print('Wheel speed: Left {}, Right {}'.format(left_wheel_speed, right_wheel_speed))
 
-            message = {'type': 'SetMotors', 'left': left_wheel_speed, 'right': right_wheel_speed}
-            connectivity.write(message)
+        #     message = {'type': 'SetMotors', 'left': left_wheel_speed, 'right': right_wheel_speed}
+        #     # connectivity.write(message)
 
-            if key == keys.ESC:
-                print('STOP and EXIT')
-                connectivity.write({'type': 'SetMotors', 'left': 0, 'right': 0})
-                break
+        #     if key == keys.ESC:
+        #         print('STOP and EXIT')
+        #         connectivity.write({'type': 'SetMotors', 'left': 0, 'right': 0})
+        #         break
 
 
 if __name__ == "__main__":
@@ -83,5 +83,7 @@ if __name__ == "__main__":
         assert False, 'unsupported connectivity method: {}'.format(connectivity)
 
     con = Connectivity(connectivity, parameters)
-    con.write({'type': 'MPUrate', 'rate': 5000})
+    con.write({'type': 'MPUrate', 'rate': 100000})
+    con.write({'type': 'SetMotors', 'left': 0, 'right': 0})
+
     main_loop(con)

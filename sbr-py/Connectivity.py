@@ -29,8 +29,8 @@ class Connectivity:
         self.wifi = None
         self.bt = None
         self.received_bytes = b''
-
         self.connection = connection_type.upper()
+
         if self.connection == 'WIFI':
             assert False, 'WIFI connectivity not yet supported'
         elif self.connection == 'BT':
@@ -140,26 +140,16 @@ class Connectivity:
         """
         if payload['type'] == 'SetMotors':
             byte_frame = b'\x2F'
-            byte_frame += struct.pack('>HH', payload['left'], payload['right'])
+            byte_frame += struct.pack('<hh', payload['left'], payload['right'])
             byte_frame += self.crc8(byte_frame)     # add crc
-            byte_frame += b'\r\n'
+            byte_frame += b'\n\r'
             print('byte frame: {}\n'.format(byte_frame))
+            self.serial.write(byte_frame)
         elif payload['type'] == 'MPUrate':
-            print('payload:{}'.format(payload))
-            print(type(payload['rate']))
-            print(payload['rate'])
-            print('\n\n')
             byte_frame = b'\xA7'
-            byte_frame += struct.pack('>I', payload['rate'])
+            byte_frame += struct.pack('<I', payload['rate'])
             byte_frame += self.crc8(byte_frame)     # add crc
-            byte_frame += b'\r\n'
-
-            print(byte_frame)
-            print('\n\n')
-            # hash = crc8.crc8(initial_start=0xFF)
-            # [hash.update(b) for b in byte_frame]
-            # byte_frame += hash.digest()
-            # byte_frame += b'\r\n'
-            print('MPUrate: {}\n'.format(byte_frame))
+            byte_frame += b'\n\r'
+            self.serial.write(byte_frame)
         else:
             assert False, 'Unsupported message PC->robot: {}'.format(payload['type'])
