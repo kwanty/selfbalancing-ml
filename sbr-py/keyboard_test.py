@@ -39,7 +39,7 @@ def main_loop(connectivity):
         if msg['type'] is None:     # ignore None msg
             pass
         elif msg['type'] == 'MPUdata':
-            print('acc: {:.2f} {:.2f} {:.2f}, gyro:  {:.2f} {:.2f} {:.2f}'
+            print('acc: {: >5.2f} {: >5.2f} {: >5.2f}, gyro:  {: >5.2f} {: >5.2f} {: >5.2f}'
             .format(msg['acc_x'], msg['acc_y'], msg['acc_z'], msg['gyro_x'], msg['gyro_y'], msg['gyro_z']))
         else:
             print('Unsupported message from robot, type: {}'.format(msg['type']))
@@ -84,6 +84,6 @@ if __name__ == "__main__":
 
     con = Connectivity(connectivity, parameters)
     con.write({'type': 'MPUrate', 'rate': 100000})
-    con.write({'type': 'SetMotors', 'left': 0, 'right': 0})
+    con.write({'type': 'SetMotors', 'left': 255, 'right': -255})
 
     main_loop(con)
