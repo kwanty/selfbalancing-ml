@@ -77,9 +77,9 @@ class Connectivity:
         :return: crc8
         """
         hash = crc8.crc8(initial_start=0xFF)            # non standard init value
-        [hash.update(b) for b in byte_frame]      # CRC8 with beginning frame, without CRC and ending tags
-        print(type(byte_frame))
-        print(type(byte_frame[0]))
+        hash.update(byte_frame)                         # CRC8 with beginning frame, without CRC and ending tags
+        # print(type(byte_frame))
+        # print(type(byte_frame[0]))
         # print(byte_frame[0])
         # print(hash.digest())
         # print(len(byte_frame))
@@ -96,21 +96,25 @@ class Connectivity:
             if len(byte_frame) != 28:                   # wrong message length
                 # print('!=28')
                 return empty_result
-            if self.crc8(byte_frame[:-3]) != byte_frame[-3]:       # corrupted frame
+            if self.crc8(byte_frame[:-3])[0] != byte_frame[-3]:       # corrupted frame
+                print(byte_frame)
+                print(self.crc8(byte_frame[:-3]))
+                print(byte_frame[-3])
+                print('\n')
                 return empty_result
-            # print('CRC8 OK!')
-            acc_x = struct.unpack_from('<f', b''.join(byte_frame[1:5]))[0]
-            acc_y = struct.unpack('<f', b''.join(byte_frame[5:9]))[0]
-            acc_z = struct.unpack('<f', b''.join(byte_frame[9:13]))[0]
-            gyro_x = struct.unpack('<f', b''.join(byte_frame[13:17]))[0]
-            gyro_y = struct.unpack('<f', b''.join(byte_frame[17:21]))[0]
-            gyro_z = struct.unpack('<f', b''.join(byte_frame[21:25]))[0]
+            print('CRC8 OK!')
+            acc_x = struct.unpack_from('<f', byte_frame[1:5])[0]
+            acc_y = struct.unpack('<f', byte_frame[5:9])[0]
+            acc_z = struct.unpack('<f', byte_frame[9:13])[0]
+            gyro_x = struct.unpack('<f', byte_frame[13:17])[0]
+            gyro_y = struct.unpack('<f', byte_frame[17:21])[0]
+            gyro_z = struct.unpack('<f', byte_frame[21:25])[0]
             return {'type': 'MPUdata', 'acc_x': acc_x, 'acc_y': acc_y, 'acc_z': acc_z, 'gyro_x': gyro_x, 'gyro_y': gyro_y,'gyro_z': gyro_z}
         elif byte_frame[0] == b'\xEE'[0]:                  # package with error code
             if len(byte_frame) != 5:
                 # print('!=5')
                 return empty_result
-            if self.crc8(byte_frame[:-3]) != byte_frame[-3]:       # corrupted frame
+            if self.crc8(byte_frame[:-3])[0] != byte_frame[-3]:       # corrupted frame
                 return empty_result
             # print('CRC8 OK!')
             error_code = 'UNKNOWN_ERROR'
