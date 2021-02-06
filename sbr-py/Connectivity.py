@@ -70,13 +70,13 @@ class Connectivity:
 
     def crc8(self, byte_frame):
         """
-        Check CRC8 parity byte_frame[-3] is CRC
+        Calculate CRC8 with non standard init value
         :param byte_frame: list of bytes with entire frame
         :return: crc8
         """
-        hash = crc8.crc8(initial_start=0xFF)            # non standard init value
-        hash.update(byte_frame)                         # CRC8 with beginning frame, without CRC and ending tags
-        return hash.digest()
+        hash_crc8 = crc8.crc8(initial_start=0xFF)            # non standard init value
+        hash_crc8.update(byte_frame)                         # CRC8 with beginning frame, without CRC and ending tags
+        return hash_crc8.digest()
 
     def decode_frame(self, byte_frame):
         """
