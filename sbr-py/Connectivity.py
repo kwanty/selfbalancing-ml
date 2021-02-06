@@ -7,6 +7,7 @@
 # File:         Connectivity.py
 # TODO: WIFI/BT connectivity
 # TODO: test decode_frame() Error package
+# TODO: better conversion byte->int than b'\n'[0]
 
 import crc8
 import struct
@@ -27,7 +28,7 @@ class Connectivity:
         self.serial = None
         self.wifi = None
         self.bt = None
-        self.received_bytes = []
+        self.received_bytes = b''
 
         self.connection = connection_type.upper()
         if self.connection == 'WIFI':
@@ -55,17 +56,17 @@ class Connectivity:
         """
         if len(self.received_bytes) < 2:
             return None     # frame to short
-        if self.received_bytes[-1] != b'\r' or self.received_bytes[-2] != b'\n':
+        if self.received_bytes[-1] != b'\r'[0] or self.received_bytes[-2] != b'\n'[0]:
             return None     # there no end of the frame
 
         # beginning of the frame: 0x35 (MPU frame), 0xEE (correct frame with error code)
-        if self.received_bytes[0] in [b'\x35', b'\xEE']:
+        if self.received_bytes[0] in [b'\x35'[0], b'\xEE'[0]]:
             # print('package!')
-            byte_frame = self.received_bytes.copy()
-            self.received_bytes.clear()
+            byte_frame = self.received_bytes
+            self.received_bytes = b''
             return byte_frame
 
-        self.received_bytes.clear()     # broken frame, clear it
+        self.received_bytes = b''     # broken frame, clear it
         # print('Broken frame!')
         return None
 
@@ -91,7 +92,7 @@ class Connectivity:
         :return: json packed frame
         """
         empty_result = {'type': None}
-        if byte_frame[0] == b'\x35':                    # MPU package
+        if byte_frame[0] == b'\x35'[0]:                 # MPU package
             if len(byte_frame) != 28:                   # wrong message length
                 # print('!=28')
                 return empty_result
@@ -105,21 +106,21 @@ class Connectivity:
             gyro_y = struct.unpack('<f', b''.join(byte_frame[17:21]))[0]
             gyro_z = struct.unpack('<f', b''.join(byte_frame[21:25]))[0]
             return {'type': 'MPUdata', 'acc_x': acc_x, 'acc_y': acc_y, 'acc_z': acc_z, 'gyro_x': gyro_x, 'gyro_y': gyro_y,'gyro_z': gyro_z}
-        elif byte_frame[0] == b'\xEE':                  # package with error code
+        elif byte_frame[0] == b'\xEE'[0]:                  # package with error code
             if len(byte_frame) != 5:
                 # print('!=5')
                 return empty_result
-            if  self.crc8(byte_frame[:-3]) != byte_frame[-3]:       # corrupted frame
+            if self.crc8(byte_frame[:-3]) != byte_frame[-3]:       # corrupted frame
                 return empty_result
             # print('CRC8 OK!')
             error_code = 'UNKNOWN_ERROR'
-            if byte_frame[1] == b'\x00':
+            if byte_frame[1] == 0:
                 error_code = 'ERROR_OTHER'
-            elif error_code[1] == b'\x01':
+            elif error_code[1] == 1:
                 error_code = 'ERROR_MPU_READ'
-            elif error_code[1] == b'\x02':
+            elif error_code[1] == 2:
                 error_code = 'ERROR_MPU_INIT'
-            elif error_code[1] == b'\x03':
+            elif error_code[1] == 3:
                 error_code = 'ERROR_ILLEGAL_CM'
             return {'type': 'ERROR', 'code': error_code}
 
@@ -136,7 +137,7 @@ class Connectivity:
         if self.connection == 'UART':
             rx_data = self.serial.read(size=1)  # read byte by byte
             if rx_data:
-                self.received_bytes.append(rx_data)
+                self.received_bytes += rx_data
                 frame = self.extract_frame()
                 if frame:
                     message = self.decode_frame(frame)
@@ -158,9 +159,7 @@ class Connectivity:
         if payload['type'] == 'SetMotors':
             byte_frame = b'\x2F'
             byte_frame += struct.pack('>HH', payload['left'], payload['right'])
-            hash = crc8.crc8(initial_start=0xFF)
-            [hash.update(b) for b in byte_frame]
-            byte_frame += hash.digest()
+            byte_frame += self.crc8(byte_frame)     # add crc
             byte_frame += b'\r\n'
             print('byte frame: {}\n'.format(byte_frame))
         elif payload['type'] == 'MPUrate':
@@ -170,13 +169,15 @@ class Connectivity:
             print('\n\n')
             byte_frame = b'\xA7'
             byte_frame += struct.pack('>I', payload['rate'])
+            byte_frame += self.crc8(byte_frame)     # add crc
+            byte_frame += b'\r\n'
 
             print(byte_frame)
             print('\n\n')
-            hash = crc8.crc8(initial_start=0xFF)
-            [hash.update(b) for b in byte_frame]
-            byte_frame += hash.digest()
-            byte_frame += b'\r\n'
+            # hash = crc8.crc8(initial_start=0xFF)
+            # [hash.update(b) for b in byte_frame]
+            # byte_frame += hash.digest()
+            # byte_frame += b'\r\n'
             print('MPUrate: {}\n'.format(byte_frame))
         else:
             assert False, 'Unsupported message PC->robot: {}'.format(payload['type'])
