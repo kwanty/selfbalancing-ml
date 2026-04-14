@@ -105,12 +105,12 @@ class Connectivity:
             error_code = 'UNKNOWN_ERROR'
             if byte_frame[1] == 0:
                 error_code = 'ERROR_OTHER'
-            elif error_code[1] == 1:
+            elif byte_frame[1] == 1:
                 error_code = 'ERROR_MPU_READ'
-            elif error_code[1] == 2:
+            elif byte_frame[1] == 2:
                 error_code = 'ERROR_MPU_INIT'
-            elif error_code[1] == 3:
-                error_code = 'ERROR_ILLEGAL_CM'
+            elif byte_frame[1] == 3:
+                error_code = 'ERROR_ILLEGAL_CMD'
             return {'type': 'ERROR', 'code': error_code}
         return empty_result
 

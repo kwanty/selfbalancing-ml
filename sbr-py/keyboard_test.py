@@ -9,6 +9,7 @@
 #   -
 
 import sys
+import time
 from getkey import getkey, keys
 from Connectivity import Connectivity
 
@@ -83,7 +84,11 @@ if __name__ == "__main__":
         assert False, 'unsupported connectivity method: {}'.format(connectivity)
 
     con = Connectivity(connectivity, parameters)
+
+    print("Waiting 2.5s for Arduino to reboot because opening serial port creates a DTR pulse...")
+    time.sleep(2.5)
+
     con.write({'type': 'MPUrate', 'rate': 100000})
-    con.write({'type': 'SetMotors', 'left': 255, 'right': -255})
+    con.write({'type': 'SetMotors', 'left': 100, 'right': -100})
 
     main_loop(con)
